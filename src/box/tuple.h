@@ -628,6 +628,14 @@ tuple_field_raw_by_path(struct tuple_format *format, const char *tuple,
 			goto parse;
 		if (offset_slot_hint != NULL)
 			*offset_slot_hint = offset_slot;
+		/*
+		 * When the field is multikey, the offset slot points not at the
+		 * data. It points at 'extra' array of offsets for this multikey
+		 * index. That array can only be accessed if index in that array
+		 * is known.
+		 */
+		if (field->is_multikey_part && multikey_idx == MULTIKEY_NONE)
+			goto parse;
 offset_slot_access:
 		/* Indexed field */
 		offset = field_map_get_offset(field_map, offset_slot,
