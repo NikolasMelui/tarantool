@@ -14,6 +14,14 @@ if(BUILD_STATIC)
     if (NOT CURSES_INFO_LIBRARY)
         set(CURSES_INFO_LIBRARY "")
     endif()
+
+    # From Modules/FindCurses.cmake:
+    # Set ``CURSES_NEED_NCURSES`` to ``TRUE`` before the
+    # ``find_package(Curses)`` call if NCurses functionality is required.
+    # This flag is set for linking with required library (installed
+    # via static-build/CMakeLists.txt). If this variable won't be set
+    # then tarantool binary links with system library curses which is an
+    # entire copy of ncurses
     set(CURSES_NEED_NCURSES TRUE)
 endif()
 

@@ -149,8 +149,8 @@ test_static_build: deps_debian_static
 	CMAKE_EXTRA_PARAMS=-DBUILD_STATIC=ON make -f .travis.mk test_debian_no_deps
 
 # New static build
-
-test_static_build_no_deps_linux:
+# builddir used in this target - is a default build path from cmake ExternalProject_Add()
+test_static_build_cmake_linux:
 	cd static-build && cmake . && make -j && ctest -V
 	cd test && /usr/bin/python test-run.py --force \
 		--builddir ${PWD}/static-build/tarantool-prefix/src/tarantool-build $(TEST_RUN_EXTRA_PARAMS)
@@ -218,7 +218,6 @@ INIT_TEST_ENV_OSX=\
 		rm -rf /tmp/tnt
 
 test_osx_no_deps: build_osx
-	# Init macOS test env
 	${INIT_TEST_ENV_OSX}; \
 	cd test && ./test-run.py --vardir /tmp/tnt --force $(TEST_RUN_EXTRA_PARAMS)
 
@@ -233,9 +232,9 @@ base_deps_osx:
 	brew install --force ${STATIC_OSX_PKGS} || brew upgrade ${STATIC_OSX_PKGS}
 	pip install --force-reinstall -r test-run/requirements.txt
 
-test_static_build_no_deps_osx: base_deps_osx
+# builddir used in this target - is a default build path from cmake ExternalProject_Add()
+test_static_build_cmake_osx: base_deps_osx
 	cd static-build && cmake . && make -j && ctest -V
-	# Init macOS test env
 	${INIT_TEST_ENV_OSX}; \
 	cd test && ./test-run.py --vardir /tmp/tnt \
 		--builddir ${PWD}/static-build/tarantool-prefix/src/tarantool-build \

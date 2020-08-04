@@ -9,10 +9,17 @@ set(NCURSES_VERSION 6.2)
 set(READLINE_VERSION 8.0)
 set(UNWIND_VERSION 1.3-rc1)
 
-find_program(C_COMPILER gcc)
-find_program(CXX_COMPILER g++)
+if (APPLE)
+    find_program(C_COMPILER clang)
+    find_program(CXX_COMPILER clang++)
+else()
+    find_program(C_COMPILER gcc)
+    find_program(CXX_COMPILER g++)
+endif()
 set(CMAKE_C_COMPILER ${C_COMPILER})
 set(CMAKE_CXX_COMPILER ${CXX_COMPILER})
+
+# Install all libraries required by tarantool at current build dir
 
 #
 # OpenSSL
@@ -80,7 +87,18 @@ ExternalProject_Add(readline
 #
 # ICONV
 #
-if (NOT APPLE)
+if (APPLE)
+    ExternalProject_Add(iconv
+        URL https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
+        CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER}
+            <SOURCE_DIR>/configure
+            --prefix=<INSTALL_DIR>
+            --disable-shared
+            --enable-static
+            --with-gnu-ld
+        STEP_TARGETS download
+    )
+else()
     # In linux iconv is embedded into glibc
     # So we find system header and copy it locally
     find_path(ICONV_INCLUDE_DIR iconv.h)
@@ -101,19 +119,10 @@ if (NOT APPLE)
     add_custom_target(iconv
         DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/iconv-prefix/include/iconv.h"
     )
+    # This is a hack for further getting install directory of library
+    # by ExternalProject_Get_Property
     set_target_properties(iconv
         PROPERTIES _EP_INSTALL_DIR ${ICONV_INSTALL_PREFIX}
-    )
-else()
-    ExternalProject_Add(iconv
-        URL https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
-        CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER}
-            <SOURCE_DIR>/configure
-            --prefix=<INSTALL_DIR>
-            --disable-shared
-            --enable-static
-            --with-gnu-ld
-        STEP_TARGETS download
     )
 endif()
 
@@ -162,6 +171,8 @@ if (APPLE)
     endif()
 
     add_custom_target(unwind DEPENDS ${UNWIND_DEPENDENCIES})
+    # This is a hack for further getting install directory of library
+    # by ExternalProject_Get_Property
     set_target_properties(unwind
         PROPERTIES _EP_INSTALL_DIR ${UNWIND_INSTALL_PREFIX}
     )
@@ -178,6 +189,8 @@ else()
     )
 endif()
 
+# Get install directories of builded libraries for building
+# tarantool with custon CMAKE_PREFIX_PATH
 foreach(PROJ openssl icu zlib ncurses readline iconv unwind)
     ExternalProject_Get_Property(${PROJ} install_dir)
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH}:${install_dir})
@@ -197,16 +210,14 @@ ExternalProject_Add(tarantool
         -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
         -DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=FALSE
         -DOPENSSL_USE_STATIC_LIBS=TRUE
-        -DCMAKE_BUILD_TYPE=Debug
         -DBUILD_STATIC=TRUE
         -DENABLE_DIST=TRUE
         -DENABLE_BACKTRACE=TRUE
-        -DPACKAGE:STRING=${PACKAGE_NAME}
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         ${CMAKE_TARANTOOL_ARGS}
-    BUILD_COMMAND ${CMAKE_MAKE_PROGRAM} -j
     STEP_TARGETS build
+    BUILD_COMMAND $(MAKE)
 )
 
 enable_testing()

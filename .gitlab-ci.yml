@@ -534,14 +534,14 @@ static_build:
   script:
     - ${GITLAB_MAKE} test_static_build
 
-static_build_no_deps_linux:
+static_build_cmake_linux:
   <<: *docker_test_definition
   script:
-    - ${GITLAB_MAKE} test_static_build_no_deps_linux
+    - ${GITLAB_MAKE} test_static_build_cmake_linux
 
-static_build_no_deps_osx_15:
+static_build_cmake_osx_15:
   stage: test
   tags:
     - osx_15
   script:
-    - ${GITLAB_MAKE} test_static_build_no_deps_osx
+    - ${GITLAB_MAKE} test_static_build_cmake_osx

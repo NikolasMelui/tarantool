@@ -131,6 +131,8 @@ set(CMAKE_REQUIRED_INCLUDES "")
 if(BUILD_STATIC AND NOT TARGET_OS_DARWIN)
     set(UNWIND_LIB_NAME libunwind.a)
 else()
+    # libunwind can't be compiled on macOS.
+    # But there exists libunwind.dylib as a part of MacOSSDK
     set(UNWIND_LIB_NAME unwind)
 endif()
 find_library(UNWIND_LIBRARY PATH_SUFFIXES system NAMES ${UNWIND_LIB_NAME})
@@ -192,6 +194,9 @@ if (ENABLE_BACKTRACE)
     find_package_message(UNWIND_LIBRARIES "Found unwind" "${UNWIND_LIBRARIES}")
 endif()
 
+# On macOS there is no '-static-libstdc++' flag and it's use will
+# raise following error:
+# error: argument unused during compilation: '-static-libstdc++'
 if(BUILD_STATIC AND NOT TARGET_OS_DARWIN)
     # Static linking for c++ routines
     add_compile_flags("C;CXX" "-static-libstdc++")
